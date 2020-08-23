@@ -12,11 +12,21 @@
 #include <Urho3D/Graphics/Texture2DArray.h>
 #include <Urho3D/Graphics/Texture2D.h>
 #include <Urho3D/Resource/Image.h>
+#include <Urho3D/IO/Filesystem.h>
 
 
 #include "../Components/thirdpersoncamera.h"
 
+#include "../hextobuffer.h"
+#include "../ThirdParty/accidental-noise-library/anl.h"
+
 using namespace Urho3D;
+
+
+#include <vector>
+
+
+float rollf(float low, float high);
 
 MainState::MainState(Context *context) : GameStateBase(context)
 {
@@ -43,7 +53,7 @@ void MainState::Start()
 	cam->SetRotAngle(0);
 	cam->SetCamAngle(40);
 	cam->SetMinFollow(10);
-	cam->SetMaxFollow(100);
+	cam->SetMaxFollow(500);
 	cam->SetMinFollowAngle(0);
 	cam->SetMaxFollowAngle(89);
 	cam->SetPosition(Vector3(0,0,0));
@@ -57,7 +67,7 @@ void MainState::Start()
 	terrain->SetPatchSize(64);
     terrain->SetSpacing(Vector3(1,0.5,1));
     terrain->SetSmoothing(false);
-	terrain->SetHeightMap(&hmap);
+	//terrain->SetHeightMap(&hmap);
 	
 	blendtex0_=SharedPtr<Texture2D>(new Texture2D(context_));
 	blendtex1_=SharedPtr<Texture2D>(new Texture2D(context_));
@@ -83,6 +93,7 @@ void MainState::Start()
 	mat->SetShaderParameter("LayerScaling", var);
 	
 	terrain->SetMaterial(mat);
+	terrain->SetCastShadows(true);
 	
 	
 	// Setup zone and lighting
@@ -91,16 +102,63 @@ void MainState::Start()
 	Zone *zone=ln->CreateComponent<Zone>();
 	zone->SetAmbientColor(Color(0.6,0.6,0.8));
 
-	zone->SetFogStart(100);
-	zone->SetFogEnd(500);
+	zone->SetFogStart(1000);
+	zone->SetFogEnd(5000);
 	zone->SetFogColor(Color(0.6,0.6,0.8));
-	zone->SetBoundingBox(BoundingBox(Vector3(-10000.0f, -100.0f, -10000.0f), Vector3(10000.0f, 100.0f, 10000.0f)));
+	zone->SetBoundingBox(BoundingBox(Vector3(-10000.0f, -600.0f, -10000.0f), Vector3(10000.0f, 600.0f, 10000.0f)));
 	
 	Light *dl=ln->CreateComponent<Light>();
 	dl->SetLightType(LIGHT_DIRECTIONAL);
 	ln->SetDirection(Vector3(1.5,3.5,-1.5));
 	dl->SetColor(Color(2,2,2));
 	dl->SetSpecularIntensity(0.01f);
+	
+	
+	// Test HexToBuffer
+	HexToBuffer htb(IntVector2(1025,1025), IntVector2(20,20));
+	//Image thtb(context_);
+	//thtb.SetSize(1024,1024,3);
+	//NeighborValuesStruct nvs;
+	anl::CArray2Dd thtb(1025,1025);
+	
+	std::vector<int> themap;
+	for(int y=0; y<20; ++y)
+	{
+		for(int x=0; x<20; ++x)
+		{
+			if(rollf(0,10)<3) themap.push_back(1);
+			else themap.push_back(0);
+		}
+	}
+	
+	HexGrid hg(1);
+	
+	for(int x=0; x<1025; ++x)
+	{
+		for(int y=0; y<1025; ++y)
+		{
+			IntVector2 h=htb.PointToHex(IntVector2(x,y));
+			int mv=themap[h.y_*20+h.x_];
+			if(mv==1) thtb.set(x,y, 0.0);
+			else thtb.set(x,y, 1.0);
+		}
+	}
+	
+	thtb.blur(0.03, false);
+	thtb.scaleToRange(0.125,0.0);
+	
+	for(int x=0; x<1025; ++x)
+	{
+		for(int y=0; y<1025; ++y)
+		{
+			double mv=thtb.get(x,y);
+			hmap.SetPixel(x,y,Color(mv,0,0));
+		}
+	}
+	terrain->SetHeightMap(&hmap);
+	//thtb.SavePNG(GetSubsystem<FileSystem>()->GetProgramDir() + "thtb.png");
+	String fn=GetSubsystem<FileSystem>()->GetProgramDir() + "thtb.png";
+	anl::saveDoubleArray(std::string(fn.CString()), &thtb);
 }
 
 void MainState::Update(float dt)
