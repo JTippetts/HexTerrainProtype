@@ -1,6 +1,10 @@
 #pragma once
 
 #include "../gamestatebase.h"
+#include <Urho3D/Scene/Scene.h>
+#include <Urho3D/Scene/Node.h>
+#include <Urho3D/UI/UIElement.h>
+#include <Urho3D/Graphics/Texture2D.h>
 
 class MainState : public GameStateBase
 {
@@ -10,4 +14,11 @@ class MainState : public GameStateBase
 
 	virtual void Start() override;
 	virtual void Update(float dt) override;
+	
+	protected:
+	SharedPtr<Scene> scene_;
+	Node *cameranode_;
+	Node *terrainnode_;
+	
+	SharedPtr<Texture2D> blendtex0_, blendtex1_;
 };
