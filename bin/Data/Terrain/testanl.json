@@ -1,0 +1,7 @@
+[
+	["constant", 3],
+	["constant", 8],
+	["seed", 12345],
+	["gradientBasis", 0, 2],
+	["scaleDomain", 3, 1]
+]

@@ -6,6 +6,8 @@
 #include <Urho3D/UI/UIElement.h>
 #include <Urho3D/Graphics/Texture2D.h>
 
+#include "../Terrain/terrainlayer.h"
+
 class MainState : public GameStateBase
 {
 	URHO3D_OBJECT(MainState, GameStateBase);
@@ -18,7 +20,9 @@ class MainState : public GameStateBase
 	protected:
 	SharedPtr<Scene> scene_;
 	Node *cameranode_;
-	Node *terrainnode_;
+	Node *terrainnode_, *waternode_;
 	
-	SharedPtr<Texture2D> blendtex0_, blendtex1_;
+	SharedPtr<Texture2D> blendtex0_, blendtex1_, waterdepthtex_;
+	
+	void BuildWaterDepthTexture(TerrainComponents &tcomps, Texture2D *tex);
 };
