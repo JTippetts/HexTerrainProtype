@@ -156,7 +156,6 @@ void ApplyTerrainLayer(const String &name, TerrainComponents &components, unsign
 	// set up some scratch buffers
 	anl::CArray2Dd hmap(components.hmap_.GetWidth(), components.hmap_.GetHeight());
 	anl::CArray2Dd water(components.watermap_.GetWidth(), components.watermap_.GetHeight());
-	anl::CArray2Dd blend(components.blend0_.GetWidth(), components.blend0_.GetHeight());
 	anl::CArray2Dd mask(components.mask_.width(), components.mask_.height());
 	anl::CArray2Drgba blend0(components.blend0_.GetWidth(), components.blend0_.GetHeight()), blend1(components.blend0_.GetWidth(), components.blend0_.GetHeight());
 	
@@ -183,13 +182,14 @@ void ApplyTerrainLayer(const String &name, TerrainComponents &components, unsign
 							{
 								// Second element is target, third element is ANL descriptor array
 								String tar=entry[1].GetString();
-								anl::CKernel k;
 								
-								BuildANLFromJSON(k, entry[2]);
-								k.seeder(k.seed(seed++), k.lastIndex());  // Attach a seeder to the noise module
 								if(tar=="Height")
 								{
 									// Map to height buffer
+									anl::CKernel k;
+								
+									BuildANLFromJSON(k, entry[2]);
+									k.seeder(k.seed(seed++), k.lastIndex());  // Attach a seeder to the noise module
 									anl::map2DNoZ(anl::SEAMLESS_NONE, hmap, k, anl::SMappingRanges(), k.lastIndex());
 									
 									// fourth and fifth elements are remap range if present
@@ -203,6 +203,10 @@ void ApplyTerrainLayer(const String &name, TerrainComponents &components, unsign
 								else if(tar=="Water")
 								{
 									// Map to height buffer
+									anl::CKernel k;
+								
+									BuildANLFromJSON(k, entry[2]);
+									k.seeder(k.seed(seed++), k.lastIndex());  // Attach a seeder to the noise module
 									anl::map2DNoZ(anl::SEAMLESS_NONE, water, k, anl::SMappingRanges(), k.lastIndex());
 									
 									// fourth and fifth elements are remap range if present
@@ -216,115 +220,21 @@ void ApplyTerrainLayer(const String &name, TerrainComponents &components, unsign
 								else if(tar=="Layer0")
 								{
 									// Map to height buffer
-									anl::map2DNoZ(anl::SEAMLESS_NONE, blend, k, anl::SMappingRanges(), k.lastIndex());
-									
-									// fourth and fifth elements are remap range if present
-									if(entry.Size()==5)
-									{
-										double low=entry[3].GetDouble();
-										double high=entry[4].GetDouble();
-										blend.scaleToRange(low,high);
-									}
-									CopyBlendBuffer(blend0,blend1, blend, 0);
+									anl::CKernel k;
+								
+									BuildANLFromJSON(k, entry[2]);
+									k.seeder(k.seed(seed++), k.lastIndex());  // Attach a seeder to the noise module
+									anl::mapRGBA2DNoZ(anl::SEAMLESS_NONE, blend0, k, anl::SMappingRanges(), k.lastIndex());
 								}
 								
 								else if(tar=="Layer1")
 								{
 									// Map to height buffer
-									anl::map2DNoZ(anl::SEAMLESS_NONE, blend, k, anl::SMappingRanges(), k.lastIndex());
-									
-									// fourth and fifth elements are remap range if present
-									if(entry.Size()==5)
-									{
-										double low=entry[3].GetDouble();
-										double high=entry[4].GetDouble();
-										blend.scaleToRange(low,high);
-									}
-									CopyBlendBuffer(blend0,blend1, blend, 1);
-								}
-								else if(tar=="Layer2")
-								{
-									// Map to height buffer
-									anl::map2DNoZ(anl::SEAMLESS_NONE, blend, k, anl::SMappingRanges(), k.lastIndex());
-									
-									// fourth and fifth elements are remap range if present
-									if(entry.Size()==5)
-									{
-										double low=entry[3].GetDouble();
-										double high=entry[4].GetDouble();
-										blend.scaleToRange(low,high);
-									}
-									CopyBlendBuffer(blend0,blend1, blend, 2);
-								}
-								else if(tar=="Layer3")
-								{
-									// Map to height buffer
-									anl::map2DNoZ(anl::SEAMLESS_NONE, blend, k, anl::SMappingRanges(), k.lastIndex());
-									
-									// fourth and fifth elements are remap range if present
-									if(entry.Size()==5)
-									{
-										double low=entry[3].GetDouble();
-										double high=entry[4].GetDouble();
-										blend.scaleToRange(low,high);
-									}
-									CopyBlendBuffer(blend0,blend1, blend, 3);
-								}
-								else if(tar=="Layer4")
-								{
-									// Map to height buffer
-									anl::map2DNoZ(anl::SEAMLESS_NONE, blend, k, anl::SMappingRanges(), k.lastIndex());
-									
-									// fourth and fifth elements are remap range if present
-									if(entry.Size()==5)
-									{
-										double low=entry[3].GetDouble();
-										double high=entry[4].GetDouble();
-										blend.scaleToRange(low,high);
-									}
-									CopyBlendBuffer(blend0,blend1, blend, 4);
-								}
-								else if(tar=="Layer5")
-								{
-									// Map to height buffer
-									anl::map2DNoZ(anl::SEAMLESS_NONE, blend, k, anl::SMappingRanges(), k.lastIndex());
-									
-									// fourth and fifth elements are remap range if present
-									if(entry.Size()==5)
-									{
-										double low=entry[3].GetDouble();
-										double high=entry[4].GetDouble();
-										blend.scaleToRange(low,high);
-									}
-									CopyBlendBuffer(blend0,blend1, blend, 5);
-								}
-								else if(tar=="Layer6")
-								{
-									// Map to height buffer
-									anl::map2DNoZ(anl::SEAMLESS_NONE, blend, k, anl::SMappingRanges(), k.lastIndex());
-									
-									// fourth and fifth elements are remap range if present
-									if(entry.Size()==5)
-									{
-										double low=entry[3].GetDouble();
-										double high=entry[4].GetDouble();
-										blend.scaleToRange(low,high);
-									}
-									CopyBlendBuffer(blend0,blend1, blend, 6);
-								}
-								else if(tar=="Layer7")
-								{
-									// Map to height buffer
-									anl::map2DNoZ(anl::SEAMLESS_NONE, blend, k, anl::SMappingRanges(), k.lastIndex());
-									
-									// fourth and fifth elements are remap range if present
-									if(entry.Size()==5)
-									{
-										double low=entry[3].GetDouble();
-										double high=entry[4].GetDouble();
-										blend.scaleToRange(low,high);
-									}
-									CopyBlendBuffer(blend0,blend1, blend, 7);
+									anl::CKernel k;
+								
+									BuildANLFromJSON(k, entry[2]);
+									k.seeder(k.seed(seed++), k.lastIndex());  // Attach a seeder to the noise module
+									anl::mapRGBA2DNoZ(anl::SEAMLESS_NONE, blend1, k, anl::SMappingRanges(), k.lastIndex());
 								}
 							}
 							else
@@ -392,15 +302,21 @@ void ApplyTerrainLayer(const String &name, TerrainComponents &components, unsign
 			float my=(float)y/(float)blend0.height();
 			float maskval=components.mask_.getBilinear(mx,my);
 			
-			Color oldc=components.blend0_.GetPixel(x,y);
-			anl::SRGBA rgba=blend0.get(x,y);
-			Color newc(rgba.r, rgba.g, rgba.b, rgba.a);
+			Color c0=components.blend0_.GetPixel(x,y);
+			anl::SRGBA oldc0(c0.r_,c0.g_,c0.b_,c0.a_);
+			anl::SRGBA newc0=blend0.get(x,y);
 			
-			components.blend0_.SetPixel(x,y,oldc.Lerp(newc, maskval));
+			Color c1=components.blend1_.GetPixel(x,y);
+			anl::SRGBA oldc1(c1.r_,c1.g_,c1.b_,c1.a_);
+			anl::SRGBA newc1=blend1.get(x,y);
 			
-			rgba=blend1.get(x,y);
-			newc=Color(rgba.r, rgba.g, rgba.b, rgba.a);
-			components.blend1_.SetPixel(x,y,oldc.Lerp(newc, maskval));
+			anl::SRGBA nc0=oldc0 + (newc0-oldc0)*maskval;
+			anl::SRGBA nc1=oldc1 + (newc1-oldc1)*maskval;
+			
+			components.blend0_.SetPixel(x,y,Color(nc0.r,nc0.g,nc0.b,nc0.a));
+			components.blend1_.SetPixel(x,y,Color(nc1.r,nc1.g,nc1.b,nc1.a));
+			
+			
 		}
 	}
 }

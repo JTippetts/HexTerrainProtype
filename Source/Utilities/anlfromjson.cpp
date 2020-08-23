@@ -593,6 +593,28 @@ void BuildANLFromJSON(anl::CKernel &kernel, const JSONValue &json)
 							Log::Write(LOG_ERROR, String("Incorrect number of parameters to module ") + n);
 						}
 					}
+					else if(n=="color")
+					{
+						if(sz>=5)
+						{
+							handles.push_back(kernel.color(entryarr[1].GetFloat(), entryarr[2].GetFloat(), entryarr[3].GetFloat(), entryarr[4].GetFloat()));
+						}
+						else
+						{
+							Log::Write(LOG_ERROR, String("Incorrect number of parameters to module ") + n);
+						}
+					}
+					else if(n=="combineRGBA")
+					{
+						if(sz>=5)
+						{
+							handles.push_back(kernel.combineRGBA(handles[entryarr[1].GetUInt()], handles[entryarr[2].GetUInt()], handles[entryarr[3].GetUInt()],handles[entryarr[4].GetUInt()]));
+						}
+						else
+						{
+							Log::Write(LOG_ERROR, String("Incorrect number of parameters to module ") + n);
+						}
+					}
 				}
 				else
 				{

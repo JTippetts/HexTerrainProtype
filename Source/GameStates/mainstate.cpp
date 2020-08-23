@@ -90,8 +90,8 @@ void MainState::Start()
 	tcomps.blend1_.SetSize(2048,2048,4);
 	tcomps.mask_.resize(2048,2048);
 	
-	tcomps.blend0_.Clear(Color(0,0,0,0));
-	tcomps.blend1_.Clear(Color(0,0,1,0));
+	tcomps.blend0_.Clear(Color(0,1,0,0));
+	tcomps.blend1_.Clear(Color(0,0,0,0));
 	
 	tcomps.watermap_.Clear(Color(0.1,0,0));
 	
@@ -119,9 +119,6 @@ void MainState::Start()
 	
 	blendtex0_=SharedPtr<Texture2D>(new Texture2D(context_));
 	blendtex1_=SharedPtr<Texture2D>(new Texture2D(context_));
-	
-	blendtex0_->SetData(&tcomps.blend0_);
-	blendtex1_->SetData(&tcomps.blend1_);
 	
 	mat->SetTexture(TU_DIFFUSE, blendtex0_);
 	mat->SetTexture(TU_NORMAL, blendtex1_);
@@ -160,12 +157,12 @@ void MainState::Start()
 	
 	
 	// Test HexToBuffer
-	HexToBuffer htb(IntVector2(4097,4097), IntVector2(20,20));
+	HexToBuffer htb(IntVector2(4097,4097), IntVector2(30,30));
 	
 	std::vector<int> themap;
-	for(int y=0; y<20; ++y)
+	for(int y=0; y<30; ++y)
 	{
-		for(int x=0; x<20; ++x)
+		for(int x=0; x<30; ++x)
 		{
 			if(rollf(0,10)<3) themap.push_back(1);
 			else themap.push_back(0);
@@ -179,7 +176,7 @@ void MainState::Start()
 		for(int y=0; y<4097; ++y)
 		{
 			IntVector2 h=htb.PointToHex(IntVector2(x,y));
-			int mv=themap[h.y_*20+h.x_];
+			int mv=themap[h.y_*30+h.x_];
 			if(mv==1) tcomps.mask_.set(x,y, 0.0);
 			else tcomps.mask_.set(x,y, 1.0);
 		}
@@ -193,6 +190,8 @@ void MainState::Start()
 	terrain->SetHeightMap(&tcomps.hmap_);
 	water->SetHeightMap(&tcomps.watermap_);
 	BuildWaterDepthTexture(tcomps, waterdepthtex_);
+	blendtex0_->SetData(&tcomps.blend0_);
+	blendtex1_->SetData(&tcomps.blend1_);
 	/*
 	
 	JSONFile *file=cache->GetResource<JSONFile>("Terrain/testanl.json");
