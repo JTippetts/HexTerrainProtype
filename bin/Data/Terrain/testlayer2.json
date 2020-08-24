@@ -1,0 +1,32 @@
+[
+	[
+		"MapNoise",
+		"Height",
+		[
+			["simpleRidgedMultifractal", 1, 3, 8, 32, 12345, false],
+		],
+		0.13,
+		0.21
+	],
+	[
+		"MapNoise",
+		"Water",
+		[
+			["constant", 0.1],
+		],
+	],
+	[
+		"MapNoise",
+		"Layer0",
+		[
+			["color", 0,0,0,0],
+		],
+	],
+	[
+		"MapNoise",
+		"Layer1",
+		[
+			["color", 0,0,1,0],
+		]
+	]
+]

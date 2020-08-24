@@ -23,6 +23,7 @@
 #include "../hextobuffer.h"
 #include "../Utilities/anlfromjson.h"
 #include "../ThirdParty/accidental-noise-library/anl.h"
+#include "../Terrain/terraingenerator.h"
 
 using namespace Urho3D;
 
@@ -32,7 +33,7 @@ using namespace Urho3D;
 
 float rollf(float low, float high);
 
-MainState::MainState(Context *context) : GameStateBase(context)
+MainState::MainState(Context *context) : GameStateBase(context), tcomps_(context, context->GetSubsystem<ResourceCache>())
 {
 }
 
@@ -69,7 +70,6 @@ void MainState::Start()
 	
 	cam->SetClipCamera(false);
 	cam->SetSpringTrack(false);
-	//cam->SetClipDist(lightingObject["far"]->GetFloat());
 	cam->SetClipDist(10000.0f);
 	cam->SetCellSize(128);
 	cam->SetOrthographic(false);
@@ -83,28 +83,28 @@ void MainState::Start()
 	cam->SetMaxFollowAngle(89);
 	cam->SetPosition(Vector3(0,0,0));
 	
-	TerrainComponents tcomps(context_, cache);
-	tcomps.hmap_.SetSize(4097,4097,3);
-	tcomps.watermap_.SetSize(1025,1025,3);
-	tcomps.blend0_.SetSize(2048,2048,4);
-	tcomps.blend1_.SetSize(2048,2048,4);
-	tcomps.mask_.resize(2048,2048);
+	//TerrainComponents tcomps(context_, cache);
+	tcomps_.hmap_.SetSize(4097,4097,3);
+	tcomps_.watermap_.SetSize(1025,1025,3);
+	tcomps_.blend0_.SetSize(2048,2048,4);
+	tcomps_.blend1_.SetSize(2048,2048,4);
+	tcomps_.mask_.resize(2048,2048);
 	
-	tcomps.blend0_.Clear(Color(0,1,0,0));
-	tcomps.blend1_.Clear(Color(0,0,0,0));
+	tcomps_.blend0_.Clear(Color(0,1,0,0));
+	tcomps_.blend1_.Clear(Color(0,0,0,0));
 	
-	tcomps.watermap_.Clear(Color(0.1,0,0));
+	tcomps_.watermap_.Clear(Color(0.1,0,0));
 	
 	terrainnode_=scene_->CreateChild();
 	waternode_=scene_->CreateChild();
 	Terrain *terrain=terrainnode_->CreateComponent<Terrain>();
-	Material *mat=cache->GetResource<Material>("Materials/TerrainEdit8TriplanarBumpReduce.xml");
+	Material *mat=cache->GetResource<Material>("Materials/TerrainEdit8TriplanarSmoothBumpReduce.xml");
 	
 	terrain->SetPatchSize(64);
     terrain->SetSpacing(Vector3(0.25,0.5,0.25));
     terrain->SetSmoothing(false);
 	//terrain->SetHeightMap(&hmap);
-	//terrain->SetHeightMap(&tcomps.hmap_);
+	//terrain->SetHeightMap(&tcomps_.hmap_);
 	
 	Terrain *water=waternode_->CreateComponent<Terrain>();
 	water->SetPatchSize(64);
@@ -115,7 +115,7 @@ void MainState::Start()
 	wmat->SetTexture(TU_SPECULAR, waterdepthtex_);
 	water->SetMaterial(wmat);
 	
-	//water->SetHeightMap(&tcomps.watermap_);
+	//water->SetHeightMap(&tcomps_.watermap_);
 	
 	blendtex0_=SharedPtr<Texture2D>(new Texture2D(context_));
 	blendtex1_=SharedPtr<Texture2D>(new Texture2D(context_));
@@ -155,63 +155,46 @@ void MainState::Start()
 	dl->SetSpecularIntensity(0.01f);
 	dl->SetCastShadows(true);
 	
-	
-	// Test HexToBuffer
-	HexToBuffer htb(IntVector2(4097,4097), IntVector2(30,30));
-	
 	std::vector<int> themap;
+	anl::CArray2Dd themapimage(30,30);
 	for(int y=0; y<30; ++y)
 	{
 		for(int x=0; x<30; ++x)
 		{
-			if(rollf(0,10)<3) themap.push_back(1);
-			else themap.push_back(0);
+			float r=rollf(0,10);
+			if(r<3)
+			{
+				themap.push_back(1);
+				themapimage.set(x,y,0.25);
+			}
+			else
+			{
+				if(rollf(0,10)<5)
+				{
+					themap.push_back(2);
+					themapimage.set(x,y,0.5);
+				}
+				else
+				{
+					themap.push_back(0);
+					themapimage.set(x,y,0);
+				}
+			}
 		}
 	}
 	
-	HexGrid hg(1);
-	
-	for(int x=0; x<4097; ++x)
-	{
-		for(int y=0; y<4097; ++y)
-		{
-			IntVector2 h=htb.PointToHex(IntVector2(x,y));
-			int mv=themap[h.y_*30+h.x_];
-			if(mv==1) tcomps.mask_.set(x,y, 0.0);
-			else tcomps.mask_.set(x,y, 1.0);
-		}
-	}
-	
-	tcomps.mask_.blur(0.03, false);
-	tcomps.mask_.scaleToRange(1.0,0.0);
 	
 	unsigned int seed=12345;
-	ApplyTerrainLayer("testlayer", tcomps, seed);
-	terrain->SetHeightMap(&tcomps.hmap_);
-	water->SetHeightMap(&tcomps.watermap_);
-	BuildWaterDepthTexture(tcomps, waterdepthtex_);
-	blendtex0_->SetData(&tcomps.blend0_);
-	blendtex1_->SetData(&tcomps.blend1_);
-	/*
+	BuildMask(themap, 30, 30, tcomps_.mask_, 1, 0.02);
+	ApplyTerrainLayer("testlayer", tcomps_, seed);
+	BuildMask(themap, 30, 30, tcomps_.mask_, 2, 0.02);
+	ApplyTerrainLayer("testlayer2", tcomps_, seed);
 	
-	JSONFile *file=cache->GetResource<JSONFile>("Terrain/testanl.json");
-	if(file) BuildANLFromJSON(k, file->GetRoot());
-	
-	for(int x=0; x<4097; ++x)
-	{
-		for(int y=0; y<4097; ++y)
-		{
-			double nx=(double)x/4097.0;
-			double ny=(double)y/4097.0;
-			double mv=vm.evaluateScalar(nx,ny,k.lastIndex());//thtb.get(x,y);
-			tcomps.hmap_.SetPixel(x,y,Color(mv*3,0,0));
-		}
-	}
-	terrain->SetHeightMap(&tcomps.hmap_);
-	//thtb.SavePNG(GetSubsystem<FileSystem>()->GetProgramDir() + "thtb.png");
-	String fn=GetSubsystem<FileSystem>()->GetProgramDir() + "thtb.png";
-	anl::saveDoubleArray(std::string(fn.CString()), &tcomps.mask_);*/
-	
+	terrain->SetHeightMap(&tcomps_.hmap_);
+	water->SetHeightMap(&tcomps_.watermap_);
+	BuildWaterDepthTexture(tcomps_, waterdepthtex_);
+	blendtex0_->SetData(&tcomps_.blend0_);
+	blendtex1_->SetData(&tcomps_.blend1_);
 }
 
 void MainState::Update(float dt)
